@@ -74,91 +74,99 @@ var j = {
 
 var matches = {}
 var interest = {}
-var participantsArr = [a, b, c, d, e, f, g, h, i, j ]
+var participantsArr = [a, b, c, d, e, f, g, h, i, j]
 var participantsObj = {}
 
+// populate participantsObj
 participantsArr.forEach(participant => {
     var name = participant.self
     participantsObj[name] = participant
 })
 
-var participantsNames = participantsArr.map(participant => {
-    return participant.self
-})
+var participantsNames = participantsArr.map(participant => participant.self)
 
-var compareList = [...participantsNames]
-var alreadyChecked = []
 
-createMatchesAndInterestObjs()
+console.log(findInterests(participantsArr))
+console.log(findMatches(participantsArr))
+console.log(findMatchesFast(participantsArr))
 
-// fill in Interests
-participantsNames.forEach(name => {
+function findInterests(participantsArr) {
+    var participantsNames = participantsArr.map(name => name.self)
+    var interest = createMatchesOrInterestObj(participantsNames)
+    interest
+
+    participantsNames.forEach(name => {
+        participantsArr.forEach(participant => {
+            if (participant[name] === true) {
+                interest[name].push(participant.self)
+            }
+        })
+    })
+
+    return interest
+}
+
+function findMatches(participantsArr) {
+    var participantsNames = participantsArr.map(name => name.self)
+    var matches = createMatchesOrInterestObj(participantsNames)
+    var alreadyChecked = []
+
+    // fill in matches
     participantsArr.forEach(participant => {
-        if (participant[name] === true) {
-            interest[name].push(participant.self)
-        }
+        var self = participant.self
+        alreadyChecked.push(self)
+
+        participantsArr.forEach(compare => {
+            var candidate = compare.self
+            var skip = alreadyChecked.indexOf(candidate) < 0
+            var isAMatch = participant[candidate] && compare[self]
+
+            if (skip && isAMatch) {
+                matches[self].push(candidate)
+                matches[candidate].push(self)
+            }
+        })
     })
-})
 
+    return matches
+}
 
-var count = 0
-// fill in matches
-participantsArr.forEach(participant => {
-    //  var candidate = participantsNamesCopy.pop()
-    var self = participant.self
-    alreadyChecked.push(self)
+function findMatchesFast(participantsArr) {
+    // fill in matches
+    var participantsNames = participantsArr.map(name => name.self)
+    var matches = createMatchesOrInterestObj(participantsNames)
+    var compareList = [...participantsNames].reverse()
 
-    participantsArr.forEach(compare => {
-        var candidate = compare.self
-        var skip = alreadyChecked.indexOf(candidate) < 0
-        var isAMatch = participant[candidate] && compare[self]
+    participantsArr.forEach(participant => {
+        compareList.pop()
 
-        if (skip && isAMatch) {
-            matches[self].push(candidate)
-            matches[candidate].push(self)
-        }
-        count++
+        compareList.forEach(name => {
+            comparison = participantsObj[name]
+            participantName = participant.self
+
+            var isAMatch = participant[name] && comparison[participantName]
+
+            if (isAMatch) {
+                matches[participantName].push(name)
+                matches[name].push(participantName)
+            }
+        })
     })
-})
+
+    return matches
+}
 
 
-count = 0
-matches = {}
-var comparison
+function createMatchesOrInterestObj(participantsNames) {
+    var obj = {}
 
-createMatchesAndInterestObjs()
-
-compareList = compareList.reverse()
-// fill in matches
-participantsArr.forEach(participant => {
-    compareList.pop()
-
-    compareList.forEach(name => {
-        comparison = participantsObj[name]
-        participantName = participant.self
-
-        var isAMatch = participant[name] && comparison[participantName]
-
-        if (isAMatch) {
-            matches[participantName].push(name)
-            matches[name].push(participantName)
-        }
-        count++
-    })
-})
-
-
-function createMatchesAndInterestObjs() {
     participantsNames.forEach(participantName => {
         // create a matches object that collects an array matches for each  participant
-        if (!matches[participantName]) {
-            matches[participantName] = []
+        if (!obj[participantName]) {
+            obj[participantName] = []
         }
-
-        // create a Interests object collects an array of participants who have interest in each participants
-        if (!interest[participantName]) {
-            interest[participantName] = []
-        }
-
     })
+
+    obj
+    return obj
 }
