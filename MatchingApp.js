@@ -1,5 +1,6 @@
 var a = {
     self: 'a',
+    no: 1,
     b: true,
     c: true,
     d: true,
@@ -9,6 +10,7 @@ var a = {
 
 var b = {
     self: 'b',
+    no: 2,
     a: true,
     d: true,
     e: true
@@ -16,12 +18,14 @@ var b = {
 
 var c = {
     self: 'c',
+    no: 3,
     d: true,
     e: true
 }
 
 var d = {
     self: 'd',
+    no: 4,
     a: true,
     c: true,
     e: true,
@@ -30,6 +34,7 @@ var d = {
 
 var e = {
     self: 'e',
+    no: 5,
     a: true,
     b: true,
     c: true,
@@ -38,6 +43,7 @@ var e = {
 
 var f = {
     self: 'f',
+    no: 6,
     b: true,
     c: true,
     d: true
@@ -45,6 +51,7 @@ var f = {
 
 var g = {
     self: 'g',
+    no: 7,
     f: true,
     i: true,
     e: true
@@ -52,12 +59,14 @@ var g = {
 
 var h = {
     self: 'h',
+    no: 8,
     d: true,
     e: true
 }
 
 var i = {
     self: 'i',
+    no: 9,
     g: true,
     d: true,
     e: true,
@@ -66,6 +75,7 @@ var i = {
 
 var j = {
     self: 'j',
+    no: 10,
     a: true,
     h: true,
     f: true,
@@ -77,6 +87,63 @@ var interest = {}
 var participantsArr = [a, b, c, d, e, f, g, h, i, j]
 var participantsObj = {}
 
+console.log('_________WHO DO WE LIKE___________')
+console.table(findMatchesO1(participantsArr).whoDoWeLike)
+
+console.log('_________WHO LIKES US___________')
+console.table(findMatchesO1(participantsArr).whoLikesUs)
+
+console.log('_________MATCHES___________')
+console.table(findMatchesO1(participantsArr).matches)
+
+function findMatchesO1(participantsArr) {
+    var participantNames = participantsArr.map(name => name.self)
+    var preMatchObj = {}
+    var whoDoWeLike = createMatchesOrInterestObj(participantNames)
+    var whoLikesUs =  createMatchesOrInterestObj(participantNames)
+    var matches = createMatchesOrInterestObj(participantNames)
+    var i, interest, notSelfReferential, match
+
+    participantsArr.forEach(participant => {
+        var interests = Object.keys(participant)
+
+        for (i = 0; i < interests.length; i++) {
+            interest = interests[i]
+            notSelfReferential = !(interest === 'no' || interest === 'self')
+            
+            // populate matches
+            if (notSelfReferential) {
+                // ensure smaller letter always comes first in match pair
+                match = participant.self < interest ? participant.self + interest : interest + participant.self
+
+                // populate matches
+                if (preMatchObj[match]) {
+                    matches[participant.self].push(interest)
+                    matches[interest].push(participant.self)
+                } else {
+                    preMatchObj[match] = true
+                }
+
+                // populate whoLikesUs
+                 whoLikesUs[interest].push(participant.self)
+
+                 // populate whoDoWeLike
+                 whoDoWeLike[participant.self].push(interest)
+            }
+
+        }
+    })
+
+    return {
+        matches: matches,
+        whoDoWeLike: whoDoWeLike,
+        whoLikesUs: whoLikesUs
+    }
+}
+
+
+
+
 // populate participantsObj
 participantsArr.forEach(participant => {
     var name = participant.self
@@ -85,10 +152,9 @@ participantsArr.forEach(participant => {
 
 var participantsNames = participantsArr.map(participant => participant.self)
 
-
-console.log(findInterests(participantsArr))
-console.log(findMatches(participantsArr))
-console.log(findMatchesFast(participantsArr))
+// console.table(findInterests(participantsArr))
+// console.table(findMatches(participantsArr))
+// console.table(findMatchesFast(participantsArr))
 
 function findInterests(participantsArr) {
     var participantsNames = participantsArr.map(name => name.self)
@@ -167,6 +233,5 @@ function createMatchesOrInterestObj(participantsNames) {
         }
     })
 
-    obj
     return obj
 }
