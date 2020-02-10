@@ -1,31 +1,86 @@
 const csv = require('csvtojson')
-const JSONToCSV = require('json2csv').parse
-const FileSystem = require('fs')
+const fs = require('fs')
+const { parse } = require('json2csv')
 
-// var data = CSVToJSON().fromFile("./BlackAndBoodUpResponses/scorecard-responses.csv").then(responses =>{
-//     console.log(responses)
-//     return responses
-// })
-const csvFilePath = './BlackAndBoodUpResponses/scorecard-responses.csv'
+var csvFilePath = './BlackAndBoodUpResponses/scorecard-responses.csv'
 
-const jsonArray = await csv().fromFile(csvFilePath)
+var jsonArray = await csv().fromFile(csvFilePath)
 
+jsonArray
 
-//console.table(data)
-
-// var matches = {}
-// var interest = {}
 var participantsArr = jsonArray
-// var participantsObj = {}
+var participantCount = participantsArr.length
 
-// console.log('_________WHO DO WE LIKE___________')
-// console.table(findMatchesO1(participantsArr).whoDoWeLike)
+console.log('_________WHO DO WE LIKE___________')
+console.table(findMatchesO1(participantsArr).whoDoWeLike)
 
-// console.log('_________WHO LIKES US___________')
-// console.table(findMatchesO1(participantsArr).whoLikesUs)
+console.log('_________WHO LIKES US___________')
+console.table(findMatchesO1(participantsArr).whoLikesUs)
 
 console.log('_________MATCHES___________')
 console.table(findMatchesO1(participantsArr).matches)
+
+const fields = createFields()
+const opts = { fields }
+
+var matchData = findMatchesO1(participantsArr).matches
+var whoLikesUsData = findMatchesO1(participantsArr).whoLikesUs
+var whoDoWeLikeData = findMatchesO1(participantsArr).whoDoWeLike
+
+matchData = convertMatchObjectToJSONObjects(matchData)
+whoLikesUsData = convertMatchObjectToJSONObjects(whoLikesUsData)
+whoDoWeLikeData = convertMatchObjectToJSONObjects(whoDoWeLikeData)
+
+var matchesFileName = 'matches.csv'
+var whoLikesUsFileName = 'who_likes_us.csv'
+var whoDoWeLikeFileName = 'who_do_we_like.csv'
+
+saveToFile(matchesFileName, matchData, opts)
+saveToFile(whoLikesUsFileName, whoLikesUsData, opts)
+saveToFile(whoDoWeLikeFileName, whoDoWeLikeData, opts)
+
+function createFields () {
+  const fields = ['Match #']
+
+  for (var i = 1; i <= participantCount; i++) {
+    fields.push(i.toString())
+  }
+
+  return fields
+}
+
+function saveToFile (fileName, data, opts) {
+  try {
+    data = parse(data, opts)
+    console.log(data)
+  } catch (err) {
+    console.error(err)
+  }
+
+  fs.writeFile(fileName, data, function (err) {
+    if (err) return console.log(err)
+    console.log(`File saved: ${fileName}`)
+  })
+}
+
+function convertMatchObjectToJSONObjects (data) {
+  var jsonArr = []
+  var keys = Object.keys(data)
+  var jsonObj = {}
+  var noOfParticipants = keys.length
+
+  keys.forEach(key => {
+    jsonObj = {}
+
+    jsonObj['Match #'] = key
+    for (var i = 0; i <= noOfParticipants; i++) {
+      jsonObj[i] = data[key][i]
+    }
+    jsonArr.push(jsonObj)
+  })
+
+  return jsonArr
+}
 
 function findMatchesO1 (participantsArr) {
   var participantNames = participantsArr.map(name => name['ID'])
@@ -37,9 +92,9 @@ function findMatchesO1 (participantsArr) {
 
   participantsArr.forEach(participant => {
     var interests = Object.keys(participant)
-    
+
     var subject = participant['ID']
-   // subject
+    // subject
 
     for (i = 0; i < interests.length; i++) {
       interest = interests[i]
@@ -54,11 +109,8 @@ function findMatchesO1 (participantsArr) {
 
       // populate matches
       if (notSelfReferential && isInterested) {
-      // ensure smaller letter always comes first in match pair
-        match =
-          subject < interest
-            ? subject + interest
-            : interest + subject
+        // ensure smaller letter always comes first in match pair
+        match = subject < interest ? `${subject}-${interest}` : `${interest}-${subject}`
 
         if (preMatchObj[match]) {
           matches[subject].push(interest)
@@ -66,7 +118,7 @@ function findMatchesO1 (participantsArr) {
         } else {
           preMatchObj[match] = true
         }
-       
+
         // populate whoLikesUs
         whoLikesUs[interest].push(subject)
 
@@ -161,3 +213,5 @@ function createMatchesOrInterestObj (participantsNames) {
 
   return obj
 }
+
+module.exports = findMatcches01
