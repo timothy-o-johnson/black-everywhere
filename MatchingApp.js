@@ -11,14 +11,14 @@ jsonArray
 var participantsArr = jsonArray
 var participantCount = participantsArr.length
 
-console.log('_________WHO DO WE LIKE___________')
-console.table(findMatchesO1(participantsArr).whoDoWeLike)
+// console.log('_________WHO DO WE LIKE___________')
+// console.table(findMatchesO1(participantsArr).whoDoWeLike)
 
-console.log('_________WHO LIKES US___________')
-console.table(findMatchesO1(participantsArr).whoLikesUs)
+// console.log('_________WHO LIKES US___________')
+// console.table(findMatchesO1(participantsArr).whoLikesUs)
 
-console.log('_________MATCHES___________')
-console.table(findMatchesO1(participantsArr).matches)
+// console.log('_________MATCHES___________')
+// console.table(findMatchesO1(participantsArr).matches)
 
 const fields = createFields()
 const opts = { fields }
@@ -42,7 +42,7 @@ saveToFile(whoDoWeLikeFileName, whoDoWeLikeData, opts)
 function createFields () {
   const fields = ['Match #']
 
-  for (var i = 1; i <= participantCount; i++) {
+  for (var i = 0; i <= participantCount; i++) {
     fields.push(i.toString())
   }
 
@@ -84,11 +84,11 @@ function convertMatchObjectToJSONObjects (data) {
 
 function findMatchesO1 (participantsArr) {
   var participantNames = participantsArr.map(name => name['ID'])
-  var preMatchObj = {}
   var whoDoWeLike = createMatchesOrInterestObj(participantNames)
   var whoLikesUs = createMatchesOrInterestObj(participantNames)
   var matches = createMatchesOrInterestObj(participantNames)
-  var i, interest, notSelfReferential, match, isInterested
+  var preMatchObj = {}
+  var i, interest, isInterested, match, notSelfReferential
 
   participantsArr.forEach(participant => {
     var interests = Object.keys(participant)
@@ -98,18 +98,12 @@ function findMatchesO1 (participantsArr) {
 
     for (i = 0; i < interests.length; i++) {
       interest = interests[i]
-      notSelfReferential = !(
-        interest === 'Email Address' ||
-        interest === 'ID' ||
-        interest === 'Instagram Handle' ||
-        interest === 'Timestamp' ||
-        interest === 'Your Name'
-      )
+      notSelfReferential = getIsSelfReferential(interest, subject)
       isInterested = participant[interest] === 'Yes'
 
       // populate matches
       if (notSelfReferential && isInterested) {
-        // ensure smaller letter always comes first in match pair
+        // ensure smaller value always comes first in match pair
         match = subject < interest ? `${subject}-${interest}` : `${interest}-${subject}`
 
         if (preMatchObj[match]) {
@@ -133,72 +127,17 @@ function findMatchesO1 (participantsArr) {
     whoDoWeLike: whoDoWeLike,
     whoLikesUs: whoLikesUs
   }
-}
 
-function findInterests (participantsArr) {
-  var participantsNames = participantsArr.map(name => name['Your Name'])
-  var interest = createMatchesOrInterestObj(participantsNames)
-  interest
-
-  participantsNames.forEach(name => {
-    participantsArr.forEach(participant => {
-      if (participant[name] === true) {
-        interest[name].push(subject)
-      }
-    })
-  })
-
-  return interest
-}
-
-function findMatches (participantsArr) {
-  var participantsNames = participantsArr.map(name => name['Your Name'])
-  var matches = createMatchesOrInterestObj(participantsNames)
-  var alreadyChecked = []
-
-  // fill in matches
-  participantsArr.forEach(participant => {
-    var self = subject
-    alreadyChecked.push(self)
-
-    participantsArr.forEach(compare => {
-      var candidate = compare['Your Name']
-      var skip = alreadyChecked.indexOf(candidate) < 0
-      var isAMatch = participant[candidate] && compare[self]
-
-      if (skip && isAMatch) {
-        matches[self].push(candidate)
-        matches[candidate].push(self)
-      }
-    })
-  })
-
-  return matches
-}
-
-function findMatchesFast (participantsArr) {
-  // fill in matches
-  var participantsNames = participantsArr.map(name => name['Your Name'])
-  var matches = createMatchesOrInterestObj(participantsNames)
-  var compareList = [...participantsNames].reverse()
-
-  participantsArr.forEach(participant => {
-    compareList.pop()
-
-    compareList.forEach(name => {
-      comparison = participantsObj[name]
-      participantName = subject
-
-      var isAMatch = participant[name] && comparison[participantName]
-
-      if (isAMatch) {
-        matches[participantName].push(name)
-        matches[name].push(participantName)
-      }
-    })
-  })
-
-  return matches
+  function getIsSelfReferential(interest, subject){
+    return !(
+        interest === 'Email Address' ||
+        interest === 'ID' ||
+        interest === 'Instagram Handle' ||
+        interest === 'Timestamp' ||
+        interest === 'Your Name' ||
+        interest === subject
+      )
+  }
 }
 
 function createMatchesOrInterestObj (participantsNames) {
@@ -214,4 +153,4 @@ function createMatchesOrInterestObj (participantsNames) {
   return obj
 }
 
-module.exports = findMatcches01
+module.exports = {findMatchesO1}
